@@ -1,0 +1,22 @@
+{
+  "name": "node.js_api",
+  "version": "1.0.0",
+  "description": "RESTful API tutorial project from Academind.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ataa0/Restful-API-with-node.js.git"
+  },
+  "author": "Ataa",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ataa0/Restful-API-with-node.js/issues"
+  },
+  "homepage": "https://github.com/Ataa0/Restful-API-with-node.js#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
