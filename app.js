@@ -1,5 +1,7 @@
 const express = require('express');
 const morgan  =require('morgan');
+const bodyParser = require('body-parser');
+
 const app = express();
 
 
@@ -8,6 +10,20 @@ const orderRoutes = require('./api/routes/orders');
 
 
 app.use(morgan('dev'));//handles the next function
+app.use(bodyParser.urlencoded({extended:false}));
+app.use(bodyParser.json());
+
+// funnel every request with it, adds this header to all the responses
+app.use((req,res,next)=>{
+    res.header('Access-Control-Allow-Origin','*');
+    //define which kind of headers we want to accept, '*' means anything
+    res.header('Access-Control-Allow-Headers','Origin , X-Requested-With, Content-Type, Accept, Authorization');
+    if (req.method === 'OPTIONS'){
+        res.header('Access-Control-Allow-Methods','PUT, POST, PATCH, DELETE, GET');
+        return res.status(200).json({});
+    }
+    next();// passing the request to the other routes
+});
 
 
 //setting up middleware with app.use()
