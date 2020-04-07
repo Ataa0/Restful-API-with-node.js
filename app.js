@@ -1,13 +1,17 @@
 const express = require('express');
 const morgan  =require('morgan');
 const bodyParser = require('body-parser');
-
+const mongoose = require('mongoose');
 const app = express();
 
 
 const productRoutes = require('./api/routes/products');
 const orderRoutes = require('./api/routes/orders');
 
+
+//connect to mongodb
+const url = 'mongodb://localhost:27017/Shop';
+mongoose.connect(url);
 
 app.use(morgan('dev'));//handles the next function
 app.use(bodyParser.urlencoded({extended:false}));
