@@ -1,12 +1,46 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const multer = require('multer');
+//adjust how files get stored
+const storage = multer.diskStorage({
+    //multer will execute these functions whenever a new file is recieved
+    destination : function(req,file,cb){
+        console.log('here');
+        //pass an error and the path to store the file
+        cb(null,'D:/projects/Node.js/Building a REST API/uploads');
+    },
+    filename : function(req,file,cb){
+        //pass an error and the file name
+        cb(null, Date.now()+ file.originalname);
+    }
+});
+
+const fileFilter = (req,file,cb)=>{
+    if(file.mimetype === 'image/jpeg' || file.mimetype ==='image/png'){
+        //accept a file
+        cb(null,true);
+    }
+    else{
+        //reject a file
+        console.log('the file type is not supported.')
+        return cb(null,false);
+    }
+    
+    
+}
+const upload =multer({storage: storage,limits : {
+    fileSize : 1024* 1024 *5
+    },
+    fileFilter : fileFilter
+});
 
 const Product = require('../models/product');
+
 //register routes
 router.get('/',(req,res,next)=>{
     Product.find()
-    .select('name price _id')
+    .select('name price _id productImage')
     .exec()
     .then((products)=>{
         const response ={
@@ -16,6 +50,7 @@ router.get('/',(req,res,next)=>{
                     name : product.name,
                     price : product.price,
                     _id: product._id,
+                    productImage : product.productImage,
                     request:{
                         type : 'GET',
                         url : 'http://localhost:3000/products/'+product._id
@@ -36,7 +71,7 @@ router.get('/',(req,res,next)=>{
 router.get('/:productId',(req,res,next)=>{
     const id = req.params.productId;
     Product.findById(id)
-    .select('name price _id')
+    .select('name price _id productImage')
     .exec()
     .then((product)=>{
         if(product){
@@ -58,11 +93,13 @@ router.get('/:productId',(req,res,next)=>{
     });
 });
 
-router.post('/',(req,res,next)=>{
+router.post('/',upload.single('productImage'),(req,res,next)=>{//added middleware to handle the request before the callback
+    console.log(req.file)
     const product = new Product({
         _id : mongoose.Types.ObjectId(),
         name : req.body.name,
-        price : req.body.price
+        price : req.body.price,
+        productImage: req.file.path
     });
     product.save().then((result)=>{
         console.log(result);
@@ -72,6 +109,7 @@ router.post('/',(req,res,next)=>{
                 name : result.name,
                 price : result.price,
                 _id : result._id,
+                productImage : result.productImage,
                 request :{
                     type : 'GET',
                     url : 'http://localhost:3000/products/'+result._id

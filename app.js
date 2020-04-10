@@ -14,6 +14,7 @@ const url = 'mongodb://localhost:27017/Shop';
 mongoose.connect(url);
 
 app.use(morgan('dev'));//handles the next function
+app.use(express.static('uploads'));//make the uploads folder static
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 
