@@ -7,14 +7,14 @@ const app = express();
 
 const productRoutes = require('./api/routes/products');
 const orderRoutes = require('./api/routes/orders');
-
+const userRoutes = require('./api/routes/users');
 
 //connect to mongodb
 const url = 'mongodb://localhost:27017/Shop';
 mongoose.connect(url);
 
 app.use(morgan('dev'));//handles the next function
-app.use(express.static('uploads'));//make the uploads folder static
+app.use('/uploads',express.static('uploads'));//make the uploads folder static
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 
@@ -34,11 +34,13 @@ app.use((req,res,next)=>{
 //setting up middleware with app.use()
 app.use('/products',productRoutes);
 app.use('/orders',orderRoutes);
+app.use('/users',userRoutes);
+
 
 //Error handling
 // if I get to this route, that means that no other router was able to handle this request.
 app.use((req,res,next)=>{
-    const error = new Error('Not found');
+    const error = new Error('the requested router was not found');
     error.statusCode=404;
     next(error);
 });
