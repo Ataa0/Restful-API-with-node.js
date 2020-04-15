@@ -17,7 +17,6 @@ app.use(morgan('dev'));//handles the next function
 app.use('/uploads',express.static('uploads'));//make the uploads folder static
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
-
 // funnel every request with it, adds this header to all the responses
 app.use((req,res,next)=>{
     res.header('Access-Control-Allow-Origin','*');
@@ -29,7 +28,7 @@ app.use((req,res,next)=>{
     }
     next();// passing the request to the other routes
 });
-
+process.env.JWT_Key = "123Secret"
 
 //setting up middleware with app.use()
 app.use('/products',productRoutes);
