@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const multer = require('multer');
+const Authenticate = require('../Authentication/check-Auth');
+
 //adjust how files get stored
 const storage = multer.diskStorage({
     //multer will execute these functions whenever a new file is recieved
@@ -25,9 +27,7 @@ const fileFilter = (req,file,cb)=>{
         //reject a file
         console.log('the file type is not supported.')
         return cb(null,false);
-    }
-    
-    
+    }   
 }
 const upload =multer({storage: storage,limits : {
     fileSize : 1024* 1024 *5
@@ -93,7 +93,7 @@ router.get('/:productId',(req,res,next)=>{
     });
 });
 
-router.post('/',upload.single('productImage'),(req,res,next)=>{//added middleware to handle the request before the callback
+router.post('/',Authenticate,upload.single('productImage'),(req,res,next)=>{//added middleware to handle the request before the callback
     console.log(req.file)
     const product = new Product({
         _id : mongoose.Types.ObjectId(),
@@ -125,7 +125,7 @@ router.post('/',upload.single('productImage'),(req,res,next)=>{//added middlewar
     });
 });
 
-router.patch('/:productId',(req,res,next)=>{
+router.patch('/:productId',Authenticate,(req,res,next)=>{
     const id = req.params.productId ; 
     const updateOps ={};
     for(const ops of req.body){
@@ -151,7 +151,7 @@ router.patch('/:productId',(req,res,next)=>{
     });
 });
 
-router.delete('/:productId',(req,res,next)=>{
+router.delete('/:productId',Authenticate,(req,res,next)=>{
     const id = req.params.productId;
     Product.remove({_id: id})
     .exec()
