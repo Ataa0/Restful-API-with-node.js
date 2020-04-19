@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
-
+const Authenticate = require('../Authentication/check-Auth');
 Router.post('/signup',(req,res,next)=>{
     User.find({email : req.body.email})
     .exec()
@@ -66,6 +66,7 @@ Router.post('/login',(req,res,next)=>{
                 if(result){
                     console.log(process.env.JWT_Key)
                     const Token = JWT.sign({
+                        _id : user[0]._id,
                         email : user[0].email,
                         password : user[0].password
                     },
@@ -121,5 +122,17 @@ Router.delete('/:userid',(req,res,next)=>{
     });
 
     
+});
+
+Router.get('/orders',Authenticate,(req,res,next)=>{
+    console.log(req.userData);
+    User.findById({_id : req.userData._id})
+    .populate('orders')
+    .then((user)=>{
+        res.status(200).json({
+            orders : user.orders
+        });
+    })
+    .catch((err)=>next(err));
 })
 module.exports = Router;

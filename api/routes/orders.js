@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Order = require('../models/order');
 const Product = require('../models/product');
+const User = require('../models/user');
 const Authentication = require('../Authentication/check-Auth');
 
 router.get('/',Authentication,(req,res,next)=>{
@@ -30,6 +31,7 @@ router.get('/',Authentication,(req,res,next)=>{
 });
 
 router.get('/:orderId',Authentication,(req,res,next)=>{
+
     Order.findById(req.params.orderId)
     .populate('product')
     .exec()
@@ -54,6 +56,8 @@ router.get('/:orderId',Authentication,(req,res,next)=>{
 });
 
 router.post('/',Authentication,(req,res,next)=>{
+    console.log('user = ',req.userData._id);
+    const dummy = req.body;
     Product.findById(req.body.productId)
     .then(product=>{
         if(!product){
@@ -69,18 +73,22 @@ router.post('/',Authentication,(req,res,next)=>{
         return order.save();
     }
     })
-    .then((result)=>{
-        console.log(result);
+    .then((order)=>{
+        console.log(dummy);
+        User.findByIdAndUpdate({_id : req.userData._id},{"$addToSet":{"orders":order}},{new :true,upsert:true})
+        .then()
+        .catch(err=>{
+            next(err);
+        });
         res.status(201).json({
             createdOrder : {
-                _id : result._id,
-                product : result.product,
-                quantity : result.quantity
+                _id : order._id,
+                product : order.product,
+                quantity : order.quantity
             }
         });
     })
     .catch((err)=>{
-        console.log(err);
         res.status(500).json({
             error : err
         });
