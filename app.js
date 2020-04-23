@@ -8,10 +8,12 @@ const app = express();
 const productRoutes = require('./api/routes/products');
 const orderRoutes = require('./api/routes/orders');
 const userRoutes = require('./api/routes/users');
+const manufacturerRoutes = require('./api/routes/manufacturers');
+
 
 //connect to mongodb
 const url = 'mongodb://localhost:27017/Shop';
-mongoose.connect(url);
+mongoose.connect(url,{ useNewUrlParser: true ,useUnifiedTopology: true,useFindAndModify: false,useCreateIndex: true});
 
 app.use(morgan('dev'));//handles the next function
 app.use('/uploads',express.static('uploads'));//make the uploads folder static
@@ -34,7 +36,7 @@ process.env.JWT_Key = "123Secret"
 app.use('/products',productRoutes);
 app.use('/orders',orderRoutes);
 app.use('/users',userRoutes);
-
+app.use('/manufacturers',manufacturerRoutes);
 
 //Error handling
 // if I get to this route, that means that no other router was able to handle this request.

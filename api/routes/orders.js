@@ -8,19 +8,13 @@ const Authentication = require('../Authentication/check-Auth');
 
 router.get('/',Authentication,(req,res,next)=>{
     Order.find()
-    .select('product quantity _id')
-    .populate('product','name')
+    .populate('product')
+    .populate({path : 'user',select : '_id email'})
     .exec()
     .then(orders=>{
         res.status(200).json({
             count : orders.length,
-            orders : orders.map(order=>{
-                return {
-                    _id : order._id,
-                    product : order.product,
-                    quantity : order.quantity
-                }
-            })
+            orders : orders
         })
     })
     .catch((err)=>{
@@ -30,34 +24,7 @@ router.get('/',Authentication,(req,res,next)=>{
     });
 });
 
-router.get('/:orderId',Authentication,(req,res,next)=>{
-
-    Order.findById(req.params.orderId)
-    .populate('product')
-    .exec()
-    .then((order)=>{
-        if(!order){
-            res.status(404).json({
-                message : 'order was not found.'
-            });
-        }else{
-            res.status(200).json({
-                order : {
-                    _id : order._id,
-                    quantity : order.quantity,
-                    product : order.product
-                }
-            });
-        }
-    })
-    .catch((err)=>{
-        error : err
-    })
-});
-
 router.post('/',Authentication,(req,res,next)=>{
-    console.log('user = ',req.userData._id);
-    const dummy = req.body;
     Product.findById(req.body.productId)
     .then(product=>{
         if(!product){
@@ -65,35 +32,71 @@ router.post('/',Authentication,(req,res,next)=>{
                 message : 'product was not found'
             });
         }else{
-        const order = new Order({
-            _id : mongoose.Types.ObjectId(),
-            quantity : req.body.quantity,
-            product : req.body.productId
-        });
-        return order.save();
-    }
-    })
-    .then((order)=>{
-        console.log(dummy);
-        User.findByIdAndUpdate({_id : req.userData._id},{"$addToSet":{"orders":order}},{new :true,upsert:true})
-        .then()
-        .catch(err=>{
-            next(err);
-        });
-        res.status(201).json({
-            createdOrder : {
-                _id : order._id,
-                product : order.product,
-                quantity : order.quantity
+            if(Number.parseInt(product.quantity) <Number.parseInt(req.body.quantity) ){
+                return res.status(412).json({
+                    message : 'there is not enough of th product in stock'
+                });
             }
-        });
-    })
+            let orderQuantity  = req.body.quantity;
+            product.quantity -=orderQuantity;
+            product.save()
+            .then((prod)=>{
+                const order = new Order({
+                    _id : mongoose.Types.ObjectId(),
+                    quantity : req.body.quantity,
+                    product : req.body.productId,
+                    user : req.userData._id
+                })
+                order.save()
+                .then((order)=>{
+                    User.findByIdAndUpdate({_id : req.userData._id},{"$addToSet":{"orders":order}})
+                    .then((something)=>{
+                        res.status(201).json({
+                            createdOrder : order
+                        });
+                    })
+                    .catch(err=>{
+                        console.log(err)
+                        next(err);
+                    });
+        }).catch(err=>console.log(err))
+            }).catch(err=>{console.log(err)});
+    }
+})
     .catch((err)=>{
+        console.log(err)
         res.status(500).json({
             error : err
         });
     });
 });
+
+
+router.get('/:orderId',Authentication,(req,res,next)=>{
+
+    Order.findById(req.params.orderId)
+    .populate('product')
+    .populate({path : 'user',select : '_id email'})
+    .then((order)=>{
+        if(!order){
+            res.status(404).json({
+                message : 'order was not found.'
+            });
+        }else{
+            res.status(200).json({
+                order : order
+            });
+        }
+    })
+    .catch((err)=>
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        });
+    })
+});
+
 
 router.delete('/:orderId',Authentication,(req,res,next)=>{
     console.log('Delete')

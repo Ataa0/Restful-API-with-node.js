@@ -5,6 +5,8 @@ const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
 const Authenticate = require('../Authentication/check-Auth');
+
+
 Router.post('/signup',(req,res,next)=>{
     User.find({email : req.body.email})
     .exec()
@@ -72,7 +74,7 @@ Router.post('/login',(req,res,next)=>{
                     },
                     process.env.JWT_Key,
                     {
-                        expiresIn : "1h"
+                        expiresIn : "24h"
                     })
                     return res.status(200).json({
                         message : 'Authentication Successful',
@@ -125,14 +127,53 @@ Router.delete('/:userid',(req,res,next)=>{
 });
 
 Router.get('/orders',Authenticate,(req,res,next)=>{
-    console.log(req.userData);
     User.findById({_id : req.userData._id})
-    .populate('orders')
+    .populate({
+        path : 'orders',
+        select : '_id quantity product',
+        populate:{
+            path : 'product'
+        }
+    })
+    .exec()
     .then((user)=>{
+        console.log('user : ',user)
         res.status(200).json({
+            count : user.orders.count,
             orders : user.orders
         });
     })
     .catch((err)=>next(err));
+});
+Router.get('/orders/:orderId',Authenticate,(req,res,next)=>{
+    User.findById({_id : req.userData._id})
+    .populate({
+        path : 'orders',
+        select : '_id quantity product',
+        populate:{
+            path : 'product'
+        }
+    })
+    .then((user)=>{
+        let check = false;
+        if(user._id != req.userData._id){
+            res.status(403).json({
+                message : 'You are unauthorized to view this data'
+            });
+        }else{
+            user.orders.forEach(order => {
+                if(order._id == req.params.orderId){
+                    check = true
+                    res.status(200).json({
+                        order : order
+                    });
+                }
+            });
+        }if(!check){
+        res.status(404).json({
+            message : 'the requested order was not found'
+        });}
+    })
 })
+
 module.exports = Router;
