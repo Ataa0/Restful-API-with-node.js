@@ -1,6 +1,7 @@
 const JWT = require('jsonwebtoken');
-module.exports= (req,res,next)=>{
+module.exports.checkUser= (req,res,next)=>{
     try{
+        console.log('user')
         let token = req.headers.authorization;
         token = token.split(" ")[1];
         const decodedToken = JWT.verify(token,process.env.JWT_Key);
@@ -15,3 +16,17 @@ module.exports= (req,res,next)=>{
         });
     }
 }
+
+module.exports.checkIfAdmin= (req,res,next)=>{
+    console.log('admin')
+    console.log(req.userData)
+    if(req.userData.isAdmin){
+        next();
+    }
+    else{
+        return res.status(401).json({
+            message : 'Unauthorized. The user is not an admin'
+        });
+    }
+}
+

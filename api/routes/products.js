@@ -59,7 +59,7 @@ router.get('/',(req,res,next)=>{
     })
 });
 
-router.post('/',Authenticate,upload.single('productImage'),(req,res,next)=>{//added middleware to handle the request before the callback
+router.post('/',Authenticate.checkUser,Authenticate.checkIfAdmin,upload.single('productImage'),(req,res,next)=>{//added middleware to handle the request before the callback
     Manufacturer.findById(req.body.manufacturer)
     .then((value)=>{
         if(value){
@@ -99,7 +99,7 @@ router.post('/',Authenticate,upload.single('productImage'),(req,res,next)=>{//ad
             })
     })
 });
-router.delete('/',Authenticate,(req,res,next)=>{
+router.delete('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     Product.remove({})
     .then((result)=>{
         res.status(200).json({
@@ -133,7 +133,7 @@ router.get('/:productId',(req,res,next)=>{
 
     
 
-router.patch('/:productId',Authenticate,(req,res,next)=>{
+router.patch('/:productId',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     const id = req.params.productId ; 
     const updateOps ={};
     for(const ops of req.body){
@@ -159,7 +159,7 @@ router.patch('/:productId',Authenticate,(req,res,next)=>{
     });
 });
 
-router.delete('/:productId',Authenticate,(req,res,next)=>{
+router.delete('/:productId',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     const id = req.params.productId;
     Product.remove({_id: id})
     .exec()
@@ -177,7 +177,7 @@ router.delete('/:productId',Authenticate,(req,res,next)=>{
 });
 
 
-router.post('/:productId/comments',Authenticate,(req,res,next)=>{
+router.post('/:productId/comments',Authenticate.checkUser,(req,res,next)=>{
     Product.findById(req.params.productId)
     .then((product)=>{
         if(!product){
@@ -215,7 +215,7 @@ router.post('/:productId/comments',Authenticate,(req,res,next)=>{
     });
 });
 
-router.delete('/:productId/comments/:commentId',Authenticate,(req,res,next)=>{
+router.delete('/:productId/comments/:commentId',Authenticate.checkUser,(req,res,next)=>{
     Product.findById(req.params.productId)
     .then((product)=>{
         if(!product){

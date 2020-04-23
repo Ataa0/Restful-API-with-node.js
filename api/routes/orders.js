@@ -4,9 +4,9 @@ const mongoose = require('mongoose');
 const Order = require('../models/order');
 const Product = require('../models/product');
 const User = require('../models/user');
-const Authentication = require('../Authentication/check-Auth');
+const Authenticate = require('../Authentication/check-Auth');
 
-router.get('/',Authentication,(req,res,next)=>{
+router.get('/',Authenticate.checkUser,(req,res,next)=>{
     Order.find()
     .populate('product')
     .populate({path : 'user',select : '_id email'})
@@ -24,7 +24,7 @@ router.get('/',Authentication,(req,res,next)=>{
     });
 });
 
-router.post('/',Authentication,(req,res,next)=>{
+router.post('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     Product.findById(req.body.productId)
     .then(product=>{
         if(!product){
@@ -72,7 +72,7 @@ router.post('/',Authentication,(req,res,next)=>{
 });
 
 
-router.get('/:orderId',Authentication,(req,res,next)=>{
+router.get('/:orderId',Authenticate.checkUser,(req,res,next)=>{
 
     Order.findById(req.params.orderId)
     .populate('product')
@@ -98,7 +98,7 @@ router.get('/:orderId',Authentication,(req,res,next)=>{
 });
 
 
-router.delete('/:orderId',Authentication,(req,res,next)=>{
+router.delete('/:orderId',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     console.log('Delete')
     Order.remove({_id : req.params.orderId})
     .exec()

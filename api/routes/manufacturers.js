@@ -51,7 +51,7 @@ Router.get('/',(req,res,next)=>{
     });
 });
 
-Router.post('/',Authenticate,upload.single('Image'),(req,res,next)=>{
+Router.post('/',Authenticate.checkUser,Authenticate.checkIfAdmin,upload.single('Image'),(req,res,next)=>{
     let manufacturer = new Manufacturer(req.body);
     manufacturer._id = mongoose.Types.ObjectId();
     console.log(manufacturer);
@@ -81,7 +81,7 @@ Router.get('/:manufacturerId',(req,res,next)=>{
     });
 });
 
-Router.patch('/:manufacturerId',Authenticate,upload.single('Image'),(req,res,next)=>{
+Router.patch('/:manufacturerId',Authenticate.checkUser,Authenticate.checkIfAdmin,upload.single('Image'),(req,res,next)=>{
     const id = req.params.manufacturerId ; 
     const updateOps ={};
     for(const ops of req.body){
@@ -103,7 +103,7 @@ Router.patch('/:manufacturerId',Authenticate,upload.single('Image'),(req,res,nex
     });
 });
 
-Router.delete('/:manufacturerId',Authenticate,(req,res,next)=>{
+Router.delete('/:manufacturerId',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     Manufacturer.findByIdAndRemove({_id:req.params.manufacturerId})
     .then((result)=>{
         if(!result){

@@ -6,6 +6,28 @@ const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
 const Authenticate = require('../Authentication/check-Auth');
 
+//the admin has the privilage to retrieve all the users
+Router.get('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
+    User.find()
+    .then((users)=>{
+        if(users.length>0){
+            res.status(200).json({
+                count : users.length,
+                users : users
+            })
+        }
+        else{
+            res.status(404).json({
+                count : users.length,
+                users : users
+            })
+        }
+    })
+    .catch((error=>{
+        console.log(error);
+        next(error);
+    }))
+})
 
 Router.post('/signup',(req,res,next)=>{
     User.find({email : req.body.email})
@@ -32,7 +54,8 @@ Router.post('/signup',(req,res,next)=>{
                     .then(result=>{
                         console.log(result);
                         res.status(200).json({
-                            message : 'user created'
+                            message : 'user created',
+                            user : user
                         })
                     })
                     .catch(err =>{
@@ -50,6 +73,7 @@ Router.post('/login',(req,res,next)=>{
     User.find({email : req.body.email})
     .exec()
     .then(user =>{
+        console.log(user)
         if(user.length<1){
             //the following is not a very safe way
             // res.status(404).json({
@@ -61,6 +85,7 @@ Router.post('/login',(req,res,next)=>{
         }else{
             bcrypt.compare(req.body.password,user[0].password,(err,result)=>{
                 if(err){
+                    console.log('pass')
                     return res.status(401).json({
                         message : 'Authentication failed'
                     })
@@ -70,7 +95,8 @@ Router.post('/login',(req,res,next)=>{
                     const Token = JWT.sign({
                         _id : user[0]._id,
                         email : user[0].email,
-                        password : user[0].password
+                        password : user[0].password,
+                        isAdmin : user[0].isAdmin
                     },
                     process.env.JWT_Key,
                     {
@@ -81,6 +107,7 @@ Router.post('/login',(req,res,next)=>{
                         token : Token
                     });
                 }
+                console.log('herererer')
                 return res.status(401).json({
                     message : 'Authentication failed'
                 })
@@ -126,7 +153,7 @@ Router.delete('/:userid',(req,res,next)=>{
     
 });
 
-Router.get('/orders',Authenticate,(req,res,next)=>{
+Router.get('/orders',Authenticate.checkUser,(req,res,next)=>{
     User.findById({_id : req.userData._id})
     .populate({
         path : 'orders',
@@ -145,7 +172,7 @@ Router.get('/orders',Authenticate,(req,res,next)=>{
     })
     .catch((err)=>next(err));
 });
-Router.get('/orders/:orderId',Authenticate,(req,res,next)=>{
+Router.get('/orders/:orderId',Authenticate.checkUser,(req,res,next)=>{
     User.findById({_id : req.userData._id})
     .populate({
         path : 'orders',
