@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const multer = require('multer');
 const Authenticate = require('../Authentication/check-Auth');
+const textSearch = require('mongoose-text-search');
 const Product = require('../models/product');
 const Manufacturer = require('../models/manufacturer');
 const User = require('../models/user');
@@ -200,8 +201,7 @@ router.post('/:productId/comments',Authenticate.checkUser,(req,res,next)=>{
                 console.log(product);
                 res.status(200).json({
                 message : 'comment added.',
-                re : result,
-                result : result.comments
+                result : result
             });
         })
         .catch((error)=>{
@@ -254,5 +254,34 @@ router.delete('/:productId/comments/:commentId',Authenticate.checkUser,(req,res,
 });
 
 
+router.get('/search/:searchWord',(req,res,next)=>{
+    let searchWord = req.params.searchWord;
+    searchWord = searchWord.toLowerCase();
+    let searchResult = [];
+    Product.find({})
+    .then((products)=>{
+        if(products.length>1){
+            console.log(products.length)
+            products.forEach(product => {
+                let productName = product.name;
+                let productCategory = product.category;
+                let productManufacturer = product.manufacturer.name;
+                productName = productName.toLowerCase();
+                productCategory = productCategory.toLowerCase();
+                productManufacturer = productManufacturer.toLowerCase();
+                if(productName.includes(searchWord) || productCategory.includes(searchWord) || productManufacturer.includes(searchWord))
+                        searchResult.push(product);
+            });
+            res.status(200).json({
+                count : searchResult.length,
+                result : searchResult
+            });
+        }
+    })
+    .catch((error)=>{
+        console.log(error);
+        next(error);
+    })
+});
 
 module.exports = router;

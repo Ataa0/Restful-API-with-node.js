@@ -201,6 +201,6 @@ Router.get('/orders/:orderId',Authenticate.checkUser,(req,res,next)=>{
             message : 'the requested order was not found'
         });}
     })
-})
+});
 
 module.exports = Router;

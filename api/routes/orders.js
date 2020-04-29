@@ -6,7 +6,7 @@ const Product = require('../models/product');
 const User = require('../models/user');
 const Authenticate = require('../Authentication/check-Auth');
 
-router.get('/',Authenticate.checkUser,(req,res,next)=>{
+router.get('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     Order.find()
     .populate('product')
     .populate({path : 'user',select : '_id email'})
@@ -24,7 +24,7 @@ router.get('/',Authenticate.checkUser,(req,res,next)=>{
     });
 });
 
-router.post('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
+router.post('/',Authenticate.checkUser,(req,res,next)=>{
     Product.findById(req.body.productId)
     .then(product=>{
         if(!product){
