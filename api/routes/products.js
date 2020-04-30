@@ -37,6 +37,19 @@ const upload =multer({storage: storage,limits : {
     },
     fileFilter : fileFilter
 });
+function lowerCase(array){
+    array.forEach(product => {
+        let productName = product.name;
+        let productCategory = product.category;
+        let productManufacturer = product.manufacturer.name;
+        product.name = productName.toLowerCase();
+        product.category = productCategory.toLowerCase();
+        product.manufacturer.name = productManufacturer.toLowerCase();
+        console.log(product.manufacturer)
+    });
+    //console.log(array)
+    return array
+}
 
 //register routes
 router.get('/',(req,res,next)=>{
@@ -56,8 +69,59 @@ router.get('/',(req,res,next)=>{
         console.log(error);
         res.status(500).json({
             error : error
-        })
+        });
     })
+});
+
+router.get('/search/',(req,res,next)=>{
+    Product.find({})
+    .then((products)=>{
+        let paramCount = Object.keys(req.query).length;
+        let searchResult = [];
+        products = lowerCase(products);
+        if(paramCount==1){
+            let searchWord = req.query.q;
+            searchWord = searchWord.toLowerCase();
+            products.forEach(product => {
+                let productName = product.name;
+                let productCategory = product.category;
+                let productManufacturer = product.manufacturer.name;
+                if(productName.includes(searchWord) || productCategory.includes(searchWord) || productManufacturer.includes(searchWord)){
+                    console.log(product)
+                    searchResult.push(product);
+                }
+            });
+            res.status(200).json({
+                count : searchResult.length,
+                result : searchResult
+            });
+        }
+        else if (paramCount>1){
+            searchResult = products;
+            if(req.query.manufacturer){
+                console.log('manufacturer');
+                let man =req.query.manufacturer.toLowerCase();
+                searchResult = searchResult.filter(product=>product.manufacturer.name.includes(man))
+            }
+            if(req.query.name){
+                console.log('name')
+                searchResult = searchResult.filter((product)=>product.name.includes(req.query.name))
+            }
+            if(req.query.category){
+                console.log('cat')
+                searchResult = searchResult.filter((product)=>product.category.includes(req.query.category))
+            }
+
+            res.status(200).json({
+                count : searchResult.length,
+                result : searchResult
+            });
+        }
+    }).catch((error)=>{console.log(error);
+        res.status(500).json({
+            error : error
+        })
+    });
 });
 
 router.post('/',Authenticate.checkUser,Authenticate.checkIfAdmin,upload.single('productImage'),(req,res,next)=>{//added middleware to handle the request before the callback
@@ -111,6 +175,7 @@ router.delete('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next
 })
 
 router.get('/:productId',(req,res,next)=>{
+    console.log('b/')
     const id = req.params.productId;
     Product.findById(id)
     .populate({path :'comments.comment', model : 'Comment',
@@ -254,34 +319,6 @@ router.delete('/:productId/comments/:commentId',Authenticate.checkUser,(req,res,
 });
 
 
-router.get('/search/:searchWord',(req,res,next)=>{
-    let searchWord = req.params.searchWord;
-    searchWord = searchWord.toLowerCase();
-    let searchResult = [];
-    Product.find({})
-    .then((products)=>{
-        if(products.length>1){
-            console.log(products.length)
-            products.forEach(product => {
-                let productName = product.name;
-                let productCategory = product.category;
-                let productManufacturer = product.manufacturer.name;
-                productName = productName.toLowerCase();
-                productCategory = productCategory.toLowerCase();
-                productManufacturer = productManufacturer.toLowerCase();
-                if(productName.includes(searchWord) || productCategory.includes(searchWord) || productManufacturer.includes(searchWord))
-                        searchResult.push(product);
-            });
-            res.status(200).json({
-                count : searchResult.length,
-                result : searchResult
-            });
-        }
-    })
-    .catch((error)=>{
-        console.log(error);
-        next(error);
-    })
-});
+
 
 module.exports = router;
