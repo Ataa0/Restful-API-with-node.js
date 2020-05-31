@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
     }
 });
 const fileFilter = (req,file,cb)=>{
-    if(file.mimetype === 'image/jpeg' || file.mimetype ==='image/png'){
+    if(file.mimetype === 'image/jpeg' || file.mimetype ==='image/png' || file.mimetype ==='text/json'){
         //accept a file
         cb(null,true);
     }
@@ -124,19 +124,28 @@ router.get('/search/',(req,res,next)=>{
     });
 });
 
-router.post('/',Authenticate.checkUser,Authenticate.checkIfAdmin,upload.single('productImage'),(req,res,next)=>{//added middleware to handle the request before the callback
+router.post('/',Authenticate.checkUser,Authenticate.checkIfAdmin,upload.array('productImages',10),(req,res,next)=>{//added middleware to handle the request before the callback
+    console.log('body: ',req.body);
+    var images = req.files;
     Manufacturer.findById(req.body.manufacturer)
     .then((value)=>{
-        if(value){
-            console.log('body = ',req.body);
-            let product = new Product(req.body);
+        if(value){ 
+            console.log('1')
+            var details = JSON.parse(req.body.extraDetails)
+            delete req.body.extraDetails
+            let product = new Product(req.body); 
+            product.extraDetails = details;
+            console.log('p',product);
             product._id = mongoose.Types.ObjectId();
-            if(!req.file){
+            if(!req.files){
                 res.status(500).json({
                     message : 'product Image not found or the file type is not supported.'
                 });
             }
-            product.productImage = req.file.path;
+            images.forEach(image => {
+                console.log(image.path);
+                product.productImages.push(image.path);
+            });
             product.save().then((result)=>{
                 console.log(result);
                 res.status(201).json({

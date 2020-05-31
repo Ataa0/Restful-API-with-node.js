@@ -16,7 +16,16 @@ const commentSchema = mongoose.Schema({
     }
     
 });
-
+const attributeSchema = mongoose.Schema({
+    propertyKey : {
+        type : String,
+        required : true
+    },
+    propertyValue : {
+        type : String,
+        required : true
+    }
+});
 
 const productSchema = mongoose.Schema({
     _id : mongoose.Schema.Types.ObjectId,
@@ -24,14 +33,22 @@ const productSchema = mongoose.Schema({
         type : String,
         required : true
     },
+    description : {
+        type : String,
+        required : true
+    },
+    extraDetails :[{type : attributeSchema}],
+    colors : [{
+       type  : String 
+    }],
     price : {
         type: Number,
         required : true
     },
-    productImage : {
+    productImages : [{
         type : String,
         required : true
-    },
+    }],
     quantity : {
         type : Number,
         required : true

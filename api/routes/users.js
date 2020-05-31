@@ -104,6 +104,7 @@ Router.post('/login',(req,res,next)=>{
                     })
                     return res.status(200).json({
                         message : 'Authentication Successful',
+                        isAdmin : user[0].isAdmin,
                         token : Token
                     });
                 }
@@ -119,7 +120,7 @@ Router.post('/login',(req,res,next)=>{
             error : err
         })
     })
-});
+}); 
 
 Router.delete('/:userid',(req,res,next)=>{
     User.find({_id : req.params.userid}).exec()
