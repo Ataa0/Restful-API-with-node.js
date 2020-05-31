@@ -51,11 +51,14 @@ Router.get('/',(req,res,next)=>{
     });
 });
 
-Router.post('/',Authenticate.checkUser,Authenticate.checkIfAdmin,upload.single('Image'),(req,res,next)=>{
-    let manufacturer = new Manufacturer(req.body);
+Router.post('/',Authenticate.checkUser,Authenticate.checkIfAdmin,upload.array('Images',10),(req,res,next)=>{
+    let manufacturer = new Manufacturer(req.body);   
     manufacturer._id = mongoose.Types.ObjectId();
-    console.log(manufacturer);
-    manufacturer.Image = req.file.Image;
+    console.log(req.body);
+    const Images = req.files;
+    Images.forEach(image => {
+        manufacturer.images.push(image.path);
+    });
     manufacturer.save().then((result)=>{
         res.status(200).json({
             message : 'manufacturer created',

@@ -6,15 +6,15 @@ const manufacturerSchema = mongoose.Schema({
         type : String,
         required : true
     },
-    field : {
+    fields : [{
         type : String
-    },
-    location : {
+    }],
+    locations : [{
         type : String
-    },
-    Image : {
+    }],
+    images : [{
         type  :String
-    }
+    }]
 });
 
 module.exports = mongoose.model('Manufacturer',manufacturerSchema);
