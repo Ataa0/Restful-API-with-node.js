@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/order');
 const Product = require('../models/product');
 const User = require('../models/user');
+const Basket = require('../models/basket');
 const Authenticate = require('../Authentication/check-Auth');
 
 router.get('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
@@ -23,7 +24,7 @@ router.get('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>
         });
     });
 });
-
+//order now
 router.post('/',Authenticate.checkUser,(req,res,next)=>{
     Product.findById(req.body.productId)
     .then(product=>{
@@ -34,7 +35,7 @@ router.post('/',Authenticate.checkUser,(req,res,next)=>{
         }else{
             if(Number.parseInt(product.quantity) <Number.parseInt(req.body.quantity) ){
                 return res.status(412).json({
-                    message : 'there is not enough of th product in stock'
+                    message : 'there is not enough of the product in stock'
                 });
             }
             let orderQuantity  = req.body.quantity;
@@ -71,7 +72,70 @@ router.post('/',Authenticate.checkUser,(req,res,next)=>{
     });
 });
 
-
+router.post('/basket',Authenticate.checkUser,(req,res,next)=>{
+    //getting the product IDs from the basket.
+    User.findById({_id : req.userData._id})
+    .then((user)=>{
+        var basket = user.basket;
+        console.log(basket.quantity)
+        if(basket.quantity==0)
+            {
+                res.status(404).json({
+                    message : "the user's basket is empty."
+                })
+            }
+        else{
+            var productsFromBasket = basket.itemList;
+            var productIdsFromBasket = [];
+            productsFromBasket.forEach(productFB => {
+                productIdsFromBasket.push(new mongoose.Types.ObjectId(productFB.product));
+            });
+            //getting the products that are in the basket.
+            Product.find({'_id' : {$in : productIdsFromBasket}})
+            .then((products)=>{
+                //constructing a new Order
+                let order = new Order();
+                let orderQuantity = basket.quantity;
+                let netTotal = basket.totalPrice;
+                order.quantity = orderQuantity;
+                order.netTotal = netTotal;
+                order.products = products;
+                order.user = req.userData;
+                order._id = mongoose.Types.ObjectId();
+                var counter =0;
+                //saving the order in the database
+                order.save()
+                .then((result=>{
+                    console.log('after saving')
+                    var promise = new Promise((resolve,reject)=>{
+                        //changing the quantity of the products
+                        products.forEach(product => {
+                            product.quantity-=productsFromBasket[counter++].quantity;
+                            product.save()
+                            resolve()
+                        });
+                    })
+                    //saving the products
+                    promise.then((saveresult)=>{
+                        //adding the order to the user's orders and emptying the user's basket
+                        user.orders.push(order);
+                        user.basket = new Basket();
+                        //saving the user.
+                        user.save()
+                        .then((userSaved)=>{
+                            res.status(200).json({
+                                message : 'order submitted successfully.',
+                                order : order
+                            });
+                        }).catch((error)=>{console.log(error)})
+                    }).catch((error)=>console.log(error));
+                })).catch(error=>console.log(error))
+            }).catch(error=>next(error));
+        }
+    }).catch((error)=>console.log(error))            
+})
+           
+        
 router.get('/:orderId',Authenticate.checkUser,(req,res,next)=>{
 
     Order.findById(req.params.orderId)

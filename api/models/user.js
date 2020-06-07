@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Order = require('./order');
-
+const Basket = require('./basket');
 const userSchema = mongoose.Schema({
     _id : mongoose.Schema.Types.ObjectId,
     email : {
@@ -20,7 +20,10 @@ const userSchema = mongoose.Schema({
     orders :[{
         type : mongoose.Schema.Types.ObjectId,
          ref : 'Order'
-    }]
+    }],
+    basket : {
+        type : Basket.schema
+    }
 });
 
 module.exports = mongoose.model('User',userSchema);

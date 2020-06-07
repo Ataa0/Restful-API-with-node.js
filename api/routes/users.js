@@ -5,7 +5,7 @@ const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
 const Authenticate = require('../Authentication/check-Auth');
-
+const Basket = require('../models/basket');
 //the admin has the privilage to retrieve all the users
 Router.get('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     User.find()
@@ -45,10 +45,12 @@ Router.post('/signup',(req,res,next)=>{
                     });
                 }
                 else{
+                    var basket = new Basket();
                     const user = new User({
                         _id : mongoose.Types.ObjectId(),
                         email : req.body.email,
-                        password : hash
+                        password : hash,
+                        basket : basket
                     });
                     user.save()
                     .then(result=>{
@@ -73,7 +75,6 @@ Router.post('/login',(req,res,next)=>{
     User.find({email : req.body.email})
     .exec()
     .then(user =>{
-        console.log(user)
         if(user.length<1){
             //the following is not a very safe way
             // res.status(404).json({
@@ -96,7 +97,8 @@ Router.post('/login',(req,res,next)=>{
                         _id : user[0]._id,
                         email : user[0].email,
                         password : user[0].password,
-                        isAdmin : user[0].isAdmin
+                        isAdmin : user[0].isAdmin,
+                        basket : user[0].basket
                     },
                     process.env.JWT_Key,
                     {
@@ -108,7 +110,6 @@ Router.post('/login',(req,res,next)=>{
                         token : Token
                     });
                 }
-                console.log('herererer')
                 return res.status(401).json({
                     message : 'Authentication failed'
                 })

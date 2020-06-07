@@ -1,10 +1,10 @@
 const JWT = require('jsonwebtoken');
 module.exports.checkUser= (req,res,next)=>{
     try{
-        console.log('user')
         let token = req.headers.authorization;
         token = token.split(" ")[1];
         const decodedToken = JWT.verify(token,process.env.JWT_Key);
+        console.log("Amjad1 : ",decodedToken);
        // if(decodedToken){
             req.userData = decodedToken;
             next();
