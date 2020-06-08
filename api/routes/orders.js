@@ -9,7 +9,7 @@ const Authenticate = require('../Authentication/check-Auth');
 
 router.get('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     Order.find()
-    .populate('product')
+    .populate({path : 'productList.product',select :'_id quantity'})
     .populate({path : 'user',select : '_id email'})
     .exec()
     .then(orders=>{
@@ -25,8 +25,8 @@ router.get('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>
     });
 });
 //order now
-router.post('/',Authenticate.checkUser,(req,res,next)=>{
-    Product.findById(req.body.productId)
+router.post('/',Authenticate.checkUser,(req,res,next)=>{   
+    Product.findById(req.body.product.product)
     .then(product=>{
         if(!product){
             res.status(404).json({
@@ -45,9 +45,9 @@ router.post('/',Authenticate.checkUser,(req,res,next)=>{
                 const order = new Order({
                     _id : mongoose.Types.ObjectId(),
                     quantity : req.body.quantity,
-                    product : req.body.productId,
                     user : req.userData._id
-                })
+                });
+                order.productList.push({"product":product,"quantity":orderQuantity})
                 order.save()
                 .then((order)=>{
                     User.findByIdAndUpdate({_id : req.userData._id},{"$addToSet":{"orders":order}})
@@ -99,7 +99,9 @@ router.post('/basket',Authenticate.checkUser,(req,res,next)=>{
                 let netTotal = basket.totalPrice;
                 order.quantity = orderQuantity;
                 order.netTotal = netTotal;
-                order.products = products;
+                order.productList = productsFromBasket;
+                console.log('order : ',order.productList);
+                console.log('basket : ',productsFromBasket);
                 order.user = req.userData;
                 order._id = mongoose.Types.ObjectId();
                 var counter =0;
@@ -163,7 +165,6 @@ router.get('/:orderId',Authenticate.checkUser,(req,res,next)=>{
 
 
 router.delete('/:orderId',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
-    console.log('Delete')
     Order.remove({_id : req.params.orderId})
     .exec()
     .then((result)=>{

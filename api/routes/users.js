@@ -159,17 +159,17 @@ Router.get('/orders',Authenticate.checkUser,(req,res,next)=>{
     User.findById({_id : req.userData._id})
     .populate({
         path : 'orders',
-        select : '_id quantity product',
-        populate:{
-            path : 'product'
-        }
+        model : 'Order',
+        select : '_id netTotal',
+        populate: {path : 'productList.product',select :'_id quantity'}
     })
     .exec()
     .then((user)=>{
         console.log('user : ',user)
+        console.log(user.orders.length)
         res.status(200).json({
-            count : user.orders.count,
-            orders : user.orders
+            count : user.orders.length,
+            user : user
         });
     })
     .catch((err)=>next(err));
@@ -178,11 +178,10 @@ Router.get('/orders/:orderId',Authenticate.checkUser,(req,res,next)=>{
     User.findById({_id : req.userData._id})
     .populate({
         path : 'orders',
-        select : '_id quantity product',
-        populate:{
-            path : 'product'
-        }
+        select : '_id netTotal',
+        populate:{path : 'productList.product',select :'_id quantity'}
     })
+    //.populate('orders.order')
     .then((user)=>{
         let check = false;
         if(user._id != req.userData._id){

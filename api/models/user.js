@@ -19,7 +19,8 @@ const userSchema = mongoose.Schema({
     },
     orders :[{
         type : mongoose.Schema.Types.ObjectId,
-         ref : 'Order'
+        ref : 'Order',
+        autopopulate : true
     }],
     basket : {
         type : Basket.schema

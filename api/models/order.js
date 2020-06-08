@@ -5,11 +5,10 @@ const User = require('./user');
 
 const orderSchema = mongoose.Schema({
     _id : mongoose.Schema.Types.ObjectId,
-    products : [{
-        type : mongoose.Schema.Types.ObjectId,
-        ref : 'Product',
-        required : true,
-        autopopulate : true
+    productList : [{
+        product : {type : mongoose.Schema.Types.ObjectId,
+        ref : 'Product'},
+        quantity : Number
     }],
     quantity: {
         type : Number,
