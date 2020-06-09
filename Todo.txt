@@ -1,0 +1,6 @@
+add an image model and update the models that have images to use the new model.
+update products.js  to add : upload an image , delete an image .
+update users.js to add : delete an image.
+OR update user.js and have the user contain a single image
+then update the add image mechanism in users.js.
+revisit error handling in all routes.

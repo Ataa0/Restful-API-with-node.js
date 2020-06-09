@@ -6,6 +6,37 @@ const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
 const Authenticate = require('../Authentication/check-Auth');
 const Basket = require('../models/basket');
+const multer = require('multer');
+//adjust how files get stored
+const storage = multer.diskStorage({
+    //multer will execute these functions whenever a new file is recieved
+    destination : function(req,file,cb){
+        console.log('here');
+        //pass an error and the path to store the file
+        cb(null,'D:/projects/Node.js/Building a REST API/uploads');
+    },
+    filename : function(req,file,cb){
+        //pass an error and the file name
+        cb(null, Date.now()+ file.originalname);
+    }
+});
+const fileFilter = (req,file,cb)=>{
+    if(file.mimetype === 'image/jpeg' || file.mimetype ==='image/png' || file.mimetype ==='text/json'){
+        //accept a file
+        cb(null,true);
+    }
+    else{
+        //reject a file
+        console.log('the file type is not supported.')
+        return cb(null,false);
+    }   
+}
+const upload =multer({storage: storage,limits : {
+    fileSize : 1024* 1024 *5
+    },
+    fileFilter : fileFilter
+});
+
 //the admin has the privilage to retrieve all the users
 Router.get('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>{
     User.find()
@@ -27,8 +58,18 @@ Router.get('/',Authenticate.checkUser,Authenticate.checkIfAdmin,(req,res,next)=>
         console.log(error);
         next(error);
     }))
-})
+});
 
+Router.get('/profile',Authenticate.checkUser,(req,res,next)=>{
+    User.findById({_id : req.userData._id})
+    //.populate('addresses')
+    .then((user)=>{
+        console.log(user);
+        res.status(200).json({
+            user : user
+        });
+    }).catch((error)=>next(error));
+});
 Router.post('/signup',(req,res,next)=>{
     User.find({email : req.body.email})
     .exec()
@@ -46,12 +87,11 @@ Router.post('/signup',(req,res,next)=>{
                 }
                 else{
                     var basket = new Basket();
-                    const user = new User({
-                        _id : mongoose.Types.ObjectId(),
-                        email : req.body.email,
-                        password : hash,
-                        basket : basket
-                    });
+                    const user = new User(req.body);
+                    user._id = mongoose.Types.ObjectId();
+                    email = req.body.email;
+                    user.password = hash;
+                    user.basket = basket;
                     user.save()
                     .then(result=>{
                         console.log(result);
@@ -71,6 +111,7 @@ Router.post('/signup',(req,res,next)=>{
         }
     });
 });
+
 Router.post('/login',(req,res,next)=>{
     User.find({email : req.body.email})
     .exec()
@@ -122,7 +163,73 @@ Router.post('/login',(req,res,next)=>{
         })
     })
 }); 
+//Add profile photo
+Router.post('/profilephoto',Authenticate.checkUser,upload.single("profileImage"),(req,res,next)=>{
+    User.findById({_id : req.userData._id})
+    .then((user)=>{
+        user.images.push(req.file.path);
+        user.save()
+        res.status(200).json({
+            message : 'profile picture updated successfully.',
+            user : user
+        });
+    }).catch((error)=>{
+        console.log(error);
+        next(error);
+    })
+});
+//update profile
+Router.post('/profile',Authenticate.checkUser,(req,res,next)=>{
+    const updateOps ={};
+    for(const ops of req.body){
+        updateOps[ops.propName] = ops.value
+    }
+    User.findByIdAndUpdate({_id : req.userData._id},{update : updateOps})
+    .then((user)=>{
+        res.status(200).json({
+            message : 'profile updated successfully',
+            user:user
+        });
+    }).catch((error)=>{
+        next(error);
+    })
+});
+//Add an address
+Router.post('/profile/address',Authenticate.checkUser,(req,res,next)=>{
+    User.findById({_id : req.userData._id})
+    .then((user)=>{
+        user.addresses.push(req.body);
+        user.save()
+        .then((userUpdated)=>{
+            res.status(200).json({
+                message : 'address added successfully.',
+                user : user
+            });
+        }).catch((error)=>next(error));
+    }).catch((error)=>next(error));
+});
 
+//delete an address
+Router.delete('/profile/address/:id',Authenticate.checkUser,(req,res,next)=>{
+    User.findById({_id : req.userData._id})
+    .then((user)=>{
+        var id = mongoose.Types.ObjectId(req.params.id);
+        if(user.addresses.some((address)=>address._id==id.toString())){
+            var index = user.addresses.findIndex((address)=>address._id==id.toString());
+            user.addresses.splice(index,1);
+            user.save()
+            .then((result)=>{
+                res.status(200).json({
+                    message : 'address deleted successfully',
+                    user : user
+                })
+            }).catch((error)=>next(error));
+        }
+        else{res.status(404).json({
+            message : 'this address does not exist',
+        })}
+    }).catch((error)=>next(error));
+});
 Router.delete('/:userid',(req,res,next)=>{
     User.find({_id : req.params.userid}).exec()
     .then(user=>{
@@ -174,6 +281,7 @@ Router.get('/orders',Authenticate.checkUser,(req,res,next)=>{
     })
     .catch((err)=>next(err));
 });
+
 Router.get('/orders/:orderId',Authenticate.checkUser,(req,res,next)=>{
     User.findById({_id : req.userData._id})
     .populate({

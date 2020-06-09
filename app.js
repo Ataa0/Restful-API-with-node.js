@@ -11,7 +11,6 @@ const userRoutes = require('./api/routes/users');
 const manufacturerRoutes = require('./api/routes/manufacturers');
 const basketRoutes = require('./api/routes/basket');
 
-
 //connect to mongodb
 const url = 'mongodb://localhost:27017/Shop';
 mongoose.connect(url,{ useNewUrlParser: true ,useUnifiedTopology: true,useFindAndModify: false,useCreateIndex: true});
